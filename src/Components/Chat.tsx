@@ -5,36 +5,29 @@ import ChatCard, { ChatCardProps, WebSocketProps } from './ChatCard';
 import { socket } from "../socket-service";
 
 function Chat() {
-  const [messages, setMessages] = useState<Array<ChatCardProps>>([]);
+  const [messages, setMessages] = useState<Array<ChatCardProps>>(data);
   const [author, setAuthor] = useState<string>('');
   const [message, setMessage] = useState<string>('');
 
   useEffect(() => {
-    setMessages(data);
-  }, []);
+    socket.onmessage = (websocketData: WebSocketProps) => {
+      const chatObject = JSON.parse(websocketData.data) as ChatCardProps;
+
+      setMessages((messages) => [...messages, {
+        message: chatObject.message,
+        username: chatObject.username,
+        date: chatObject.date,
+      }]);
+    }
+  }, [messages]);
 
   const submitMessage = () => {
-    setMessages([...messages, {
-      message,
-      username: author,
-      date: new Date().toISOString(),
-    }]);
     const chat = {
       message,
       username: author,
     }
     socket.send(JSON.stringify(chat));
     setMessage('');
-
-    socket.onmessage = (websocketData: WebSocketProps) => {
-      const chatObject = JSON.parse(websocketData.data) as ChatCardProps;
-      setMessages([...messages, {
-        message: chatObject.message,
-        username: chatObject.username,
-        date: chatObject.date,
-      }]);
-    }
-
   };
 
   return (
